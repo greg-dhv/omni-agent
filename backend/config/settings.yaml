@@ -1,0 +1,40 @@
+# AI Ops Platform Settings
+
+# Agent Schedules
+schedules:
+  google_ads:
+    enabled: true
+    cron: "0 8 * * *"  # Daily at 8am
+    timezone: "Europe/Brussels"
+
+  seo_content:
+    enabled: true
+    cron: "0 9 * * 1"  # Weekly on Monday at 9am
+    timezone: "Europe/Brussels"
+
+# Google Ads Analysis Settings
+google_ads:
+  lookback_days: 30
+  min_spend_threshold: 10  # EUR - minimum spend to analyze a keyword
+  high_cost_no_conversion_threshold: 50  # EUR - flag keywords above this with 0 conversions
+  low_ctr_threshold: 1.0  # % - flag ads below this CTR
+
+# SEO Content Settings
+seo_content:
+  languages:
+    - en
+    - fr
+    - nl
+  min_word_count: 1500
+  target_keyword_density: 1.5  # %
+
+# Email Settings
+email:
+  provider: "sendgrid"  # or "smtp"
+  from_name: "AI Ops"
+  from_email: "noreply@yourdomain.com"
+
+# Client Info (can be overridden in Supabase settings table)
+client:
+  name: "Casino Client"
+  email: "client@example.com"

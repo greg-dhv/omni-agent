@@ -1,0 +1,23 @@
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Anthropic
+ANTHROPIC_API_KEY=your-anthropic-api-key
+
+# Google Ads (also need config/google-ads.yaml)
+GOOGLE_ADS_DEVELOPER_TOKEN=your-developer-token
+GOOGLE_ADS_CLIENT_ID=your-oauth-client-id
+GOOGLE_ADS_CLIENT_SECRET=your-oauth-client-secret
+GOOGLE_ADS_REFRESH_TOKEN=your-refresh-token
+GOOGLE_ADS_LOGIN_CUSTOMER_ID=your-mcc-customer-id
+GOOGLE_ADS_CUSTOMER_ID=your-client-customer-id
+
+# Email (SendGrid)
+SENDGRID_API_KEY=your-sendgrid-api-key
+
+# Or SMTP
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
