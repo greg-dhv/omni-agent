@@ -8,6 +8,7 @@ from typing import Any
 import anthropic
 from dotenv import load_dotenv
 
+from .gsc_client import GSCClient
 from .prompts import (
     KEYWORD_RESEARCH_SYSTEM,
     KEYWORD_RESEARCH_PROMPT,
@@ -29,16 +30,32 @@ class SEOKeywordResearcher:
         self.claude = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
         self.repo = SupabaseRepository()
 
-    def get_gsc_data(self) -> list[dict]:
-        """Get Google Search Console data.
+    def get_gsc_data(self) -> dict[str, Any]:
+        """Get Google Search Console data with keyword opportunities.
 
-        In a real implementation, this would connect to GSC API.
-        For now, returns placeholder data.
+        Returns:
+            Dict with categorized keyword opportunities from GSC.
         """
-        # TODO: Implement GSC API integration
-        # This would typically use google-api-python-client
-        logger.info("GSC integration not yet implemented - using placeholder")
-        return []
+        try:
+            # Check if GSC is configured
+            site_url = os.environ.get("GSC_SITE_URL")
+            refresh_token = os.environ.get("GSC_REFRESH_TOKEN")
+
+            if not site_url or not refresh_token:
+                logger.info("GSC not configured - set GSC_SITE_URL and GSC_REFRESH_TOKEN")
+                return {}
+
+            gsc = GSCClient(site_url=site_url)
+            opportunities = gsc.get_keyword_opportunities(days=28)
+
+            total = sum(len(v) for v in opportunities.values())
+            logger.info(f"Found {total} keyword opportunities from GSC")
+
+            return opportunities
+
+        except Exception as e:
+            logger.error(f"Error fetching GSC data: {e}")
+            return {}
 
     def get_competitor_data(self) -> list[dict]:
         """Get competitor keyword data.
@@ -73,11 +90,16 @@ class SEOKeywordResearcher:
         competitor_data = self.get_competitor_data()
         seed_keywords = self.get_manual_keywords()
 
-        # Build prompt
+        # Build prompt with GSC data
+        if gsc_data:
+            gsc_formatted = format_gsc_data(gsc_data)
+        else:
+            gsc_formatted = "No GSC data available - focus on seed keywords"
+
         trends_data = f"Seed keywords to explore: {', '.join(seed_keywords)}"
 
         prompt = KEYWORD_RESEARCH_PROMPT.format(
-            gsc_data=format_gsc_data(gsc_data) if gsc_data else "No GSC data - focus on seed keywords",
+            gsc_data=gsc_formatted,
             competitor_data=format_competitor_data(competitor_data) if competitor_data else "No competitor data available",
             trends_data=trends_data,
         )
@@ -125,18 +147,41 @@ class SEOKeywordResearcher:
             "low": Priority.LOW,
         }
 
+        # Map opportunity types to recommendation types
+        type_map = {
+            "quick_win": "seo_optimize",
+            "low_hanging_fruit": "seo_content",
+            "ctr_opportunity": "seo_meta",
+            "striking_distance": "seo_content",
+        }
+
         for opp in research_result.get("opportunities", []):
+            opp_type = opp.get("opportunity_type", "keyword_opportunity")
+            rec_type = type_map.get(opp_type, "keyword_opportunity")
+
+            # Build title based on opportunity type
+            keyword = opp.get("keyword", "Unknown")
+            position = opp.get("current_position")
+
+            if position:
+                title = f"[Pos #{position:.0f}] {keyword}"
+            else:
+                title = f"Target: {keyword}"
+
             recommendation = Recommendation(
                 agent=AgentType.SEO_CONTENT,
-                type="keyword_opportunity",
+                type=rec_type,
                 priority=priority_map.get(opp.get("priority", "medium"), Priority.MEDIUM),
-                title=f"Target keyword: {opp.get('keyword')}",
-                summary=opp.get("suggested_topic"),
+                title=title,
+                summary=opp.get("action") or opp.get("suggested_topic"),
                 details={
-                    "keyword": opp.get("keyword"),
+                    "keyword": keyword,
+                    "current_position": opp.get("current_position"),
                     "search_volume": opp.get("search_volume"),
                     "keyword_difficulty": opp.get("keyword_difficulty"),
                     "intent": opp.get("intent"),
+                    "opportunity_type": opp_type,
+                    "action": opp.get("action"),
                     "suggested_topic": opp.get("suggested_topic"),
                     "notes": opp.get("notes"),
                 },

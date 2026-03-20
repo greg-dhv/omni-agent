@@ -13,6 +13,12 @@ GOOGLE_ADS_REFRESH_TOKEN=your-refresh-token
 GOOGLE_ADS_LOGIN_CUSTOMER_ID=your-mcc-customer-id
 GOOGLE_ADS_CUSTOMER_ID=your-client-customer-id
 
+# Google Search Console
+GSC_SITE_URL=sc-domain:yourdomain.com
+GSC_REFRESH_TOKEN=your-gsc-refresh-token
+GOOGLE_CLIENT_ID=your-oauth-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-oauth-client-secret
+
 # Email (SendGrid)
 SENDGRID_API_KEY=your-sendgrid-api-key
 

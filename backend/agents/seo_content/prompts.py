@@ -12,50 +12,59 @@ Key context:
 Provide actionable keyword recommendations with clear SEO potential."""
 
 
-KEYWORD_RESEARCH_PROMPT = """Based on the following data, identify the best keyword opportunities for an online casino blog in Belgium.
+KEYWORD_RESEARCH_PROMPT = """Based on the following data, identify the best keyword opportunities for content creation.
 
-## Current Top Performing Keywords (Google Search Console)
+## Google Search Console Data
 {gsc_data}
 
 ## Competitor Keywords (if available)
 {competitor_data}
 
-## Recent Search Trends
+## Additional Keywords to Consider
 {trends_data}
 
 ---
 
-Identify keyword opportunities that:
-1. Have reasonable search volume (100+ monthly)
-2. Are not too competitive (KD < 50 if known)
-3. Have commercial or informational intent relevant to online casinos
-4. Can be targeted with blog content
+Analyze the GSC data and identify the best opportunities. Focus on:
+
+**Quick Wins (Position 4-10):** These keywords are close to top 3. Recommend content improvements or internal linking.
+
+**Low Hanging Fruit (Position 11-20):** These are close to page 1. Recommend content expansion or new supporting articles.
+
+**CTR Opportunities:** Good rankings but low CTR. Recommend title/meta description improvements.
+
+**Striking Distance (Position 21-30):** Need dedicated content to reach page 1.
 
 For each opportunity, provide:
-- The target keyword
-- Estimated search volume (if known)
+- The target keyword (use exact keyword from GSC if available)
+- Current position (from GSC data)
+- Estimated search volume (estimate based on impressions)
+- Recommended action (optimize existing content, create new content, improve meta)
 - Content angle/topic suggestion
 - Priority (high/medium/low)
 
 Format as JSON:
 ```json
 {{
-  "summary": "Overview of keyword landscape",
+  "summary": "Overview of opportunities found",
   "opportunities": [
     {{
-      "keyword": "best online casino belgium",
-      "search_volume": 1200,
-      "keyword_difficulty": 35,
-      "intent": "commercial",
-      "suggested_topic": "Comprehensive guide to legal online casinos in Belgium",
+      "keyword": "keyword from gsc",
+      "current_position": 8.5,
+      "search_volume": 500,
+      "keyword_difficulty": 30,
+      "intent": "informational",
+      "opportunity_type": "quick_win",
+      "action": "Optimize existing content, add more depth",
+      "suggested_topic": "Expand the existing article with more details about X",
       "priority": "high",
-      "notes": "Why this is a good opportunity"
+      "notes": "Currently ranking #8, with optimization can reach top 3"
     }}
   ]
 }}
 ```
 
-Limit to top 10 opportunities."""
+Prioritize GSC data opportunities over seed keywords. Limit to top 15 opportunities."""
 
 
 CONTENT_WRITING_SYSTEM = """You are an expert SEO content writer specializing in the iGaming industry.
@@ -107,19 +116,62 @@ Remember:
 - Natural keyword placement"""
 
 
-def format_gsc_data(data: list[dict]) -> str:
-    """Format Google Search Console data for the prompt."""
+def format_gsc_data(data: dict) -> str:
+    """Format Google Search Console opportunity data for the prompt."""
     if not data:
         return "No GSC data available."
 
-    lines = ["| Query | Clicks | Impressions | CTR | Position |"]
-    lines.append("|-------|--------|-------------|-----|----------|")
+    lines = []
 
-    for row in data[:30]:
-        lines.append(
-            f"| {row.get('query', '')[:40]} | {row.get('clicks', 0)} | "
-            f"{row.get('impressions', 0)} | {row.get('ctr', 0):.1%} | {row.get('position', 0):.1f} |"
-        )
+    # Quick wins - position 4-10
+    if data.get("quick_wins"):
+        lines.append("### Quick Wins (Position 4-10, optimize for top 3)")
+        lines.append("| Keyword | Position | Impressions | Clicks | CTR |")
+        lines.append("|---------|----------|-------------|--------|-----|")
+        for row in data["quick_wins"][:10]:
+            lines.append(
+                f"| {row.get('keyword', '')[:40]} | {row.get('position', 0)} | "
+                f"{row.get('impressions', 0)} | {row.get('clicks', 0)} | {row.get('ctr', 0)}% |"
+            )
+        lines.append("")
+
+    # Low hanging fruit - position 11-20
+    if data.get("low_hanging_fruit"):
+        lines.append("### Low Hanging Fruit (Position 11-20, push to page 1)")
+        lines.append("| Keyword | Position | Impressions | Clicks | CTR |")
+        lines.append("|---------|----------|-------------|--------|-----|")
+        for row in data["low_hanging_fruit"][:10]:
+            lines.append(
+                f"| {row.get('keyword', '')[:40]} | {row.get('position', 0)} | "
+                f"{row.get('impressions', 0)} | {row.get('clicks', 0)} | {row.get('ctr', 0)}% |"
+            )
+        lines.append("")
+
+    # CTR opportunities
+    if data.get("ctr_opportunities"):
+        lines.append("### CTR Opportunities (Good position but low CTR - improve snippets)")
+        lines.append("| Keyword | Position | Impressions | Clicks | CTR |")
+        lines.append("|---------|----------|-------------|--------|-----|")
+        for row in data["ctr_opportunities"][:10]:
+            lines.append(
+                f"| {row.get('keyword', '')[:40]} | {row.get('position', 0)} | "
+                f"{row.get('impressions', 0)} | {row.get('clicks', 0)} | {row.get('ctr', 0)}% |"
+            )
+        lines.append("")
+
+    # Striking distance - position 21-30
+    if data.get("striking_distance"):
+        lines.append("### Striking Distance (Position 21-30, needs dedicated content)")
+        lines.append("| Keyword | Position | Impressions | Clicks | CTR |")
+        lines.append("|---------|----------|-------------|--------|-----|")
+        for row in data["striking_distance"][:10]:
+            lines.append(
+                f"| {row.get('keyword', '')[:40]} | {row.get('position', 0)} | "
+                f"{row.get('impressions', 0)} | {row.get('clicks', 0)} | {row.get('ctr', 0)}% |"
+            )
+
+    if not lines:
+        return "No keyword opportunities found in GSC data."
 
     return "\n".join(lines)
 

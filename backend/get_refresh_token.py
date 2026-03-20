@@ -1,10 +1,10 @@
 """
-One-time script to get Google Ads OAuth refresh token.
+One-time script to get Google OAuth refresh token for Ads + Search Console.
 
 Usage:
 1. Fill in your CLIENT_ID and CLIENT_SECRET below
 2. Run: python get_refresh_token.py
-3. Open the URL in browser, authorize, paste the code
+3. Browser opens, authorize both Google Ads AND Search Console access
 4. Copy the refresh_token to your .env file
 """
 
@@ -14,8 +14,11 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 CLIENT_ID = "YOUR_CLIENT_ID.apps.googleusercontent.com"
 CLIENT_SECRET = "YOUR_CLIENT_SECRET"
 
-# Google Ads API scope
-SCOPES = ["https://www.googleapis.com/auth/adwords"]
+# Scopes for both Google Ads and Search Console
+SCOPES = [
+    "https://www.googleapis.com/auth/adwords",
+    "https://www.googleapis.com/auth/webmasters.readonly",
+]
 
 def main():
     # Create OAuth flow
@@ -38,11 +41,15 @@ def main():
         access_type="offline"  # This ensures we get a refresh token
     )
 
-    print("\n" + "=" * 50)
-    print("SUCCESS! Copy this refresh token to your .env file:")
-    print("=" * 50)
-    print(f"\nGOOGLE_ADS_REFRESH_TOKEN={credentials.refresh_token}")
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
+    print("SUCCESS! Add these to your .env file:")
+    print("=" * 60)
+    print(f"\n# This token works for BOTH Google Ads and Search Console")
+    print(f"GOOGLE_ADS_REFRESH_TOKEN={credentials.refresh_token}")
+    print(f"GSC_REFRESH_TOKEN={credentials.refresh_token}")
+    print("\n# Also add your Search Console site URL:")
+    print("GSC_SITE_URL=sc-domain:yourdomain.com")
+    print("\n" + "=" * 60)
 
 if __name__ == "__main__":
     main()

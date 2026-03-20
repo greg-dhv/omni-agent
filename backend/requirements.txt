@@ -1,6 +1,11 @@
 # Google Ads API
 google-ads>=25.0.0
 
+# Google Search Console API
+google-api-python-client>=2.100.0
+google-auth>=2.20.0
+google-auth-oauthlib>=1.0.0
+
 # Anthropic Claude
 anthropic>=0.39.0
 
