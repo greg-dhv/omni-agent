@@ -90,6 +90,34 @@ class SEOContentWriter:
 
         return self._parse_article_response(response.content[0].text)
 
+    async def translate_keyword(self, keyword: str, target_language: str) -> str:
+        """Translate a keyword to the target language.
+
+        Args:
+            keyword: Original keyword (usually in English or detected language).
+            target_language: Target language code (en, fr, nl).
+
+        Returns:
+            Translated keyword suitable for SEO.
+        """
+        language_full = LANGUAGE_MAP.get(target_language, "English")
+
+        response = self.claude.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=100,
+            messages=[{
+                "role": "user",
+                "content": f"""Translate this SEO keyword to {language_full}.
+
+Keyword: "{keyword}"
+
+Provide ONLY the translated keyword, nothing else. Keep it natural for search - how would someone in {language_full} search for this?
+If the keyword is already in {language_full}, return it as-is."""
+            }],
+        )
+
+        return response.content[0].text.strip().strip('"')
+
     async def write_multilingual_article(
         self,
         keyword: str,
@@ -119,22 +147,33 @@ class SEOContentWriter:
             status=ContentStatus.DRAFT,
         )
 
+        # Translate keywords for each language
+        translated_keywords = {}
         for lang in languages:
-            logger.info(f"Writing {lang} version...")
-            article = await self.write_article(keyword, topic, lang, min_words)
+            logger.info(f"Translating keyword to {lang}...")
+            translated_keywords[lang] = await self.translate_keyword(keyword, lang)
+            logger.info(f"  {lang}: {translated_keywords[lang]}")
+
+        for lang in languages:
+            lang_keyword = translated_keywords[lang]
+            logger.info(f"Writing {lang} version for keyword: {lang_keyword}...")
+            article = await self.write_article(lang_keyword, topic, lang, min_words)
 
             if lang == "en":
                 content.title_en = article["title"]
                 content.content_en = article["content"]
                 content.meta_description_en = article["meta_description"]
+                content.keyword_en = lang_keyword
             elif lang == "fr":
                 content.title_fr = article["title"]
                 content.content_fr = article["content"]
                 content.meta_description_fr = article["meta_description"]
+                content.keyword_fr = lang_keyword
             elif lang == "nl":
                 content.title_nl = article["title"]
                 content.content_nl = article["content"]
                 content.meta_description_nl = article["meta_description"]
+                content.keyword_nl = lang_keyword
 
         return content
 
@@ -166,5 +205,7 @@ class SEOContentWriter:
         )
 
         content.recommendation_id = recommendation.get("id")
+        # Store the original recommendation details for context in emails
+        content.recommendation_details = details
 
         return content

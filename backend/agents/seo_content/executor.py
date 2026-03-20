@@ -87,8 +87,9 @@ class SEOContentExecutor:
             if not client_email:
                 raise ValueError("Client email not configured")
 
-            # Create and send email
-            html_content = create_content_email_html(content, client_name)
+            # Create and send email with full article content
+            recommendation_details = content.get("recommendation_details", {})
+            html_content = create_content_email_html(content, client_name, recommendation_details)
 
             success = await send_email(
                 to_email=client_email,

@@ -128,7 +128,10 @@ class Content(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     recommendation_id: Optional[str] = None
-    keyword: Optional[str] = None
+    keyword: Optional[str] = None  # Original keyword
+    keyword_en: Optional[str] = None  # Translated keyword for English
+    keyword_fr: Optional[str] = None  # Translated keyword for French
+    keyword_nl: Optional[str] = None  # Translated keyword for Dutch
     slug: Optional[str] = None
     title_en: Optional[str] = None
     title_fr: Optional[str] = None
@@ -139,6 +142,7 @@ class Content(BaseModel):
     meta_description_en: Optional[str] = None
     meta_description_fr: Optional[str] = None
     meta_description_nl: Optional[str] = None
+    recommendation_details: Optional[dict[str, Any]] = None  # Store original rec details
     status: ContentStatus = ContentStatus.DRAFT
     sent_to: Optional[str] = None
     sent_at: Optional[datetime] = None
@@ -152,6 +156,9 @@ class Content(BaseModel):
             "id": self.id,
             "recommendation_id": self.recommendation_id,
             "keyword": self.keyword,
+            "keyword_en": self.keyword_en,
+            "keyword_fr": self.keyword_fr,
+            "keyword_nl": self.keyword_nl,
             "slug": self.slug,
             "title_en": self.title_en,
             "title_fr": self.title_fr,
@@ -162,6 +169,7 @@ class Content(BaseModel):
             "meta_description_en": self.meta_description_en,
             "meta_description_fr": self.meta_description_fr,
             "meta_description_nl": self.meta_description_nl,
+            "recommendation_details": self.recommendation_details,
             "status": self.status.value,
             "sent_to": self.sent_to,
             "sent_at": self.sent_at.isoformat() if self.sent_at else None,

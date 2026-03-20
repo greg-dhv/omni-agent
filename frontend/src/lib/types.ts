@@ -105,6 +105,9 @@ export interface Content {
   id: string;
   recommendation_id: string | null;
   keyword: string | null;
+  keyword_en: string | null;
+  keyword_fr: string | null;
+  keyword_nl: string | null;
   slug: string | null;
   title_en: string | null;
   title_fr: string | null;
@@ -115,6 +118,16 @@ export interface Content {
   meta_description_en: string | null;
   meta_description_fr: string | null;
   meta_description_nl: string | null;
+  recommendation_details: {
+    keyword?: string;
+    intent?: string;
+    search_volume?: number;
+    current_position?: number;
+    opportunity_type?: string;
+    suggested_topic?: string;
+    notes?: string;
+    keyword_difficulty?: number;
+  } | null;
   status: ContentStatus;
   sent_to: string | null;
   sent_at: string | null;
