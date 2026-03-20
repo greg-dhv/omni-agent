@@ -575,6 +575,231 @@ class GoogleAdsAPIClient:
             print(f"Failed to pause ad: {e}")
             return False
 
+    def get_device_performance(self, days: int = 30) -> list[dict[str, Any]]:
+        """Get performance breakdown by device type.
+
+        Returns:
+            List of device performance records.
+        """
+        ga_service = self._get_service("GoogleAdsService")
+
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+
+        query = f"""
+            SELECT
+                segments.device,
+                metrics.cost_micros,
+                metrics.clicks,
+                metrics.impressions,
+                metrics.conversions,
+                metrics.conversions_value
+            FROM campaign
+            WHERE segments.date BETWEEN '{start_date.strftime('%Y-%m-%d')}' AND '{end_date.strftime('%Y-%m-%d')}'
+        """
+
+        device_data = {}
+        try:
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            for row in response:
+                device = row.segments.device.name
+                if device not in device_data:
+                    device_data[device] = {
+                        "device": device,
+                        "cost": 0,
+                        "clicks": 0,
+                        "impressions": 0,
+                        "conversions": 0,
+                        "conversion_value": 0,
+                    }
+                device_data[device]["cost"] += row.metrics.cost_micros / 1_000_000
+                device_data[device]["clicks"] += row.metrics.clicks
+                device_data[device]["impressions"] += row.metrics.impressions
+                device_data[device]["conversions"] += row.metrics.conversions
+                device_data[device]["conversion_value"] += row.metrics.conversions_value
+
+        except GoogleAdsException as e:
+            print(f"Google Ads API error: {e}")
+            raise
+
+        # Calculate derived metrics
+        results = []
+        for device, data in device_data.items():
+            data["ctr"] = (data["clicks"] / data["impressions"] * 100) if data["impressions"] > 0 else 0
+            data["cpc"] = (data["cost"] / data["clicks"]) if data["clicks"] > 0 else 0
+            data["conv_rate"] = (data["conversions"] / data["clicks"] * 100) if data["clicks"] > 0 else 0
+            results.append(data)
+
+        # Sort by cost descending
+        return sorted(results, key=lambda x: x["cost"], reverse=True)
+
+    def get_age_performance(self, days: int = 30) -> list[dict[str, Any]]:
+        """Get performance breakdown by age range.
+
+        Returns:
+            List of age range performance records.
+        """
+        ga_service = self._get_service("GoogleAdsService")
+
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+
+        query = f"""
+            SELECT
+                ad_group_criterion.age_range.type,
+                metrics.cost_micros,
+                metrics.clicks,
+                metrics.impressions,
+                metrics.conversions,
+                metrics.conversions_value
+            FROM age_range_view
+            WHERE segments.date BETWEEN '{start_date.strftime('%Y-%m-%d')}' AND '{end_date.strftime('%Y-%m-%d')}'
+        """
+
+        age_data = {}
+        try:
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            for row in response:
+                age_range = row.ad_group_criterion.age_range.type.name
+                if age_range not in age_data:
+                    age_data[age_range] = {
+                        "age_range": age_range,
+                        "cost": 0,
+                        "clicks": 0,
+                        "impressions": 0,
+                        "conversions": 0,
+                        "conversion_value": 0,
+                    }
+                age_data[age_range]["cost"] += row.metrics.cost_micros / 1_000_000
+                age_data[age_range]["clicks"] += row.metrics.clicks
+                age_data[age_range]["impressions"] += row.metrics.impressions
+                age_data[age_range]["conversions"] += row.metrics.conversions
+                age_data[age_range]["conversion_value"] += row.metrics.conversions_value
+
+        except GoogleAdsException as e:
+            print(f"Google Ads API error: {e}")
+            raise
+
+        results = []
+        for age_range, data in age_data.items():
+            data["ctr"] = (data["clicks"] / data["impressions"] * 100) if data["impressions"] > 0 else 0
+            data["conv_rate"] = (data["conversions"] / data["clicks"] * 100) if data["clicks"] > 0 else 0
+            results.append(data)
+
+        return sorted(results, key=lambda x: x["cost"], reverse=True)
+
+    def get_gender_performance(self, days: int = 30) -> list[dict[str, Any]]:
+        """Get performance breakdown by gender.
+
+        Returns:
+            List of gender performance records.
+        """
+        ga_service = self._get_service("GoogleAdsService")
+
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+
+        query = f"""
+            SELECT
+                ad_group_criterion.gender.type,
+                metrics.cost_micros,
+                metrics.clicks,
+                metrics.impressions,
+                metrics.conversions,
+                metrics.conversions_value
+            FROM gender_view
+            WHERE segments.date BETWEEN '{start_date.strftime('%Y-%m-%d')}' AND '{end_date.strftime('%Y-%m-%d')}'
+        """
+
+        gender_data = {}
+        try:
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            for row in response:
+                gender = row.ad_group_criterion.gender.type.name
+                if gender not in gender_data:
+                    gender_data[gender] = {
+                        "gender": gender,
+                        "cost": 0,
+                        "clicks": 0,
+                        "impressions": 0,
+                        "conversions": 0,
+                        "conversion_value": 0,
+                    }
+                gender_data[gender]["cost"] += row.metrics.cost_micros / 1_000_000
+                gender_data[gender]["clicks"] += row.metrics.clicks
+                gender_data[gender]["impressions"] += row.metrics.impressions
+                gender_data[gender]["conversions"] += row.metrics.conversions
+                gender_data[gender]["conversion_value"] += row.metrics.conversions_value
+
+        except GoogleAdsException as e:
+            print(f"Google Ads API error: {e}")
+            raise
+
+        results = []
+        for gender, data in gender_data.items():
+            data["ctr"] = (data["clicks"] / data["impressions"] * 100) if data["impressions"] > 0 else 0
+            data["conv_rate"] = (data["conversions"] / data["clicks"] * 100) if data["clicks"] > 0 else 0
+            results.append(data)
+
+        return sorted(results, key=lambda x: x["cost"], reverse=True)
+
+    def get_location_performance(self, days: int = 30, limit: int = 10) -> list[dict[str, Any]]:
+        """Get performance breakdown by location (country/region).
+
+        Returns:
+            List of location performance records.
+        """
+        ga_service = self._get_service("GoogleAdsService")
+
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+
+        query = f"""
+            SELECT
+                geographic_view.country_criterion_id,
+                geographic_view.location_type,
+                metrics.cost_micros,
+                metrics.clicks,
+                metrics.impressions,
+                metrics.conversions,
+                metrics.conversions_value
+            FROM geographic_view
+            WHERE segments.date BETWEEN '{start_date.strftime('%Y-%m-%d')}' AND '{end_date.strftime('%Y-%m-%d')}'
+        """
+
+        location_data = {}
+        try:
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            for row in response:
+                location_id = str(row.geographic_view.country_criterion_id)
+                if location_id not in location_data:
+                    location_data[location_id] = {
+                        "location_id": location_id,
+                        "location_type": row.geographic_view.location_type.name,
+                        "cost": 0,
+                        "clicks": 0,
+                        "impressions": 0,
+                        "conversions": 0,
+                        "conversion_value": 0,
+                    }
+                location_data[location_id]["cost"] += row.metrics.cost_micros / 1_000_000
+                location_data[location_id]["clicks"] += row.metrics.clicks
+                location_data[location_id]["impressions"] += row.metrics.impressions
+                location_data[location_id]["conversions"] += row.metrics.conversions
+                location_data[location_id]["conversion_value"] += row.metrics.conversions_value
+
+        except GoogleAdsException as e:
+            print(f"Google Ads API error: {e}")
+            raise
+
+        results = []
+        for location_id, data in location_data.items():
+            data["ctr"] = (data["clicks"] / data["impressions"] * 100) if data["impressions"] > 0 else 0
+            data["conv_rate"] = (data["conversions"] / data["clicks"] * 100) if data["clicks"] > 0 else 0
+            results.append(data)
+
+        return sorted(results, key=lambda x: x["cost"], reverse=True)[:limit]
+
     def update_responsive_search_ad(
         self,
         ad_group_id: str,

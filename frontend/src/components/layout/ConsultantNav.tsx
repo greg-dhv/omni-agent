@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronLeft,
   Bell,
+  FileBarChart,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -37,6 +38,11 @@ const navItems: NavItem[] = [
     label: 'SEO & Content',
     href: '/seo-content',
     icon: <Search className="h-5 w-5" />,
+  },
+  {
+    label: 'Reports',
+    href: '/reports',
+    icon: <FileBarChart className="h-5 w-5" />,
   },
   {
     label: 'Settings',
