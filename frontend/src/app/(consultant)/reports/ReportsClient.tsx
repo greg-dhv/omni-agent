@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal } from '@/components/ui';
-import { FileText, Eye, Send, RefreshCw, Calendar, TrendingUp, Users, Smartphone } from 'lucide-react';
+import { FileText, Eye, Send, RefreshCw, Calendar, TrendingUp, Users, Smartphone, ExternalLink, Download, Copy, Check } from 'lucide-react';
 
 interface ReportData {
   period: {
@@ -55,6 +55,7 @@ export function ReportsClient() {
   const [previewHtml, setPreviewHtml] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const periodLabels: Record<PeriodType, string> = {
     last_month: 'Last Month',
@@ -125,6 +126,47 @@ export function ReportsClient() {
       CONNECTED_TV: '📺',
     };
     return icons[device] || '📊';
+  };
+
+  const openInNewTab = () => {
+    if (!previewHtml) return;
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(previewHtml);
+      newWindow.document.close();
+    }
+  };
+
+  const downloadHtml = () => {
+    if (!previewHtml || !report) return;
+    const blob = new Blob([previewHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report-${report.period.start_date}-to-${report.period.end_date}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const copyHtmlToClipboard = async () => {
+    if (!previewHtml) return;
+    try {
+      await navigator.clipboard.writeText(previewHtml);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = previewHtml;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
@@ -365,20 +407,50 @@ export function ReportsClient() {
           {/* Actions */}
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900">Report Ready</h3>
-                  <p className="text-sm text-gray-500">Preview or send this report to your client</p>
-                </div>
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setShowPreview(true)}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    Preview Email
-                  </Button>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Report Ready</h3>
+                    <p className="text-sm text-gray-500">Preview, copy, or send this report to your client</p>
+                  </div>
                   <Button variant="primary" onClick={sendReport} loading={sending}>
                     <Send className="mr-2 h-4 w-4" />
-                    Send to Client
+                    Send via Email
                   </Button>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-sm font-medium text-gray-700 mb-3">Manual sharing options:</p>
+                  <div className="flex flex-wrap gap-3">
+                    <Button variant="outline" onClick={() => setShowPreview(true)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Preview
+                    </Button>
+                    <Button variant="outline" onClick={openInNewTab}>
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Open in New Tab
+                    </Button>
+                    <Button variant="outline" onClick={downloadHtml}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download HTML
+                    </Button>
+                    <Button variant="outline" onClick={copyHtmlToClipboard}>
+                      {copied ? (
+                        <>
+                          <Check className="mr-2 h-4 w-4 text-green-600" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy HTML
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Tip: "Open in New Tab" lets you select all (Cmd+A) and paste directly into Gmail or Outlook
+                  </p>
                 </div>
               </div>
             </CardContent>
