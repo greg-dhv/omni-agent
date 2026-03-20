@@ -105,6 +105,13 @@ class ReportGenerator:
             logger.warning(f"Could not fetch location data: {e}")
             locations = []
 
+        logger.info("Fetching conversion action performance...")
+        try:
+            conversion_actions = self.ads_client.get_conversion_action_performance(days=days)
+        except Exception as e:
+            logger.warning(f"Could not fetch conversion action data: {e}")
+            conversion_actions = []
+
         # Calculate totals
         totals = {
             "cost": sum(c.get("cost", 0) for c in campaigns),
@@ -164,6 +171,7 @@ class ReportGenerator:
                 "gender": genders,
                 "location": locations[:5],
             },
+            "conversion_actions": conversion_actions,
             "generated_at": datetime.now().isoformat(),
         }
 

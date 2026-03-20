@@ -74,6 +74,45 @@ def create_monthly_report_email(report: dict[str, Any], client_name: str) -> str
     devices = report.get("devices", [])
     audience = report.get("audience", {})
     campaigns = report.get("campaigns", [])
+    conversion_actions = report.get("conversion_actions", [])
+
+    # Build conversion action rows
+    conversion_rows = ""
+    total_conversions = sum(c.get("conversions", 0) for c in conversion_actions)
+    for conv in conversion_actions[:8]:  # Top 8 conversion actions
+        conversions = conv.get("conversions", 0)
+        value = conv.get("conversion_value", 0)
+        share = (conversions / total_conversions * 100) if total_conversions > 0 else 0
+        # Get emoji based on action name
+        action_name = conv.get("conversion_action", "Unknown")
+        emoji = "🎯"
+        if "FTD" in action_name.upper() or "DEPOSIT" in action_name.upper():
+            emoji = "💰"
+        elif "SIGNUP" in action_name.upper() or "REGISTER" in action_name.upper():
+            emoji = "📝"
+        elif "PURCHASE" in action_name.upper() or "BUY" in action_name.upper():
+            emoji = "🛒"
+        elif "LEAD" in action_name.upper():
+            emoji = "📧"
+        elif "CLICK" in action_name.upper():
+            emoji = "👆"
+
+        conversion_rows += f"""
+        <tr>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                {emoji} {action_name[:35]}
+            </td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #22c55e;">
+                {conversions:.0f}
+            </td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; text-align: right;">
+                {format_currency(value)}
+            </td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; text-align: right;">
+                {share:.1f}%
+            </td>
+        </tr>
+        """
 
     # Build device rows
     device_rows = ""
@@ -273,6 +312,28 @@ def create_monthly_report_email(report: dict[str, Any], client_name: str) -> str
                     </div>
                 </div>
             </div>
+
+            <!-- Conversion Actions -->
+            {f'''
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h2 style="margin: 0 0 20px; font-size: 18px; color: #1e293b; font-weight: 600;">
+                    🎯 Conversions by Type
+                </h2>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="background: #f8fafc;">
+                            <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0;">Conversion Action</th>
+                            <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0;">Count</th>
+                            <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0;">Value</th>
+                            <th style="padding: 12px 16px; text-align: right; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0;">Share</th>
+                        </tr>
+                    </thead>
+                    <tbody style="color: #334155;">
+                        {conversion_rows}
+                    </tbody>
+                </table>
+            </div>
+            ''' if conversion_rows else ''}
 
             <!-- Device Performance -->
             <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">

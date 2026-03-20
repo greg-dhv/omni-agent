@@ -370,6 +370,59 @@ class GoogleAdsAPIClient:
 
         return results
 
+    def get_conversion_action_performance(self, days: int = 30) -> list[dict[str, Any]]:
+        """Get performance breakdown by conversion action (FTD, signup, purchase, etc).
+
+        Returns:
+            List of conversion action performance records.
+        """
+        ga_service = self._get_service("GoogleAdsService")
+
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+
+        query = f"""
+            SELECT
+                segments.conversion_action_name,
+                segments.conversion_action_category,
+                metrics.conversions,
+                metrics.conversions_value,
+                metrics.all_conversions,
+                metrics.all_conversions_value
+            FROM campaign
+            WHERE segments.date BETWEEN '{start_date.strftime('%Y-%m-%d')}' AND '{end_date.strftime('%Y-%m-%d')}'
+        """
+
+        conversion_data = {}
+        try:
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            for row in response:
+                action_name = row.segments.conversion_action_name
+                if not action_name:
+                    continue
+
+                if action_name not in conversion_data:
+                    conversion_data[action_name] = {
+                        "conversion_action": action_name,
+                        "category": row.segments.conversion_action_category.name if row.segments.conversion_action_category else "OTHER",
+                        "conversions": 0,
+                        "conversion_value": 0,
+                        "all_conversions": 0,
+                        "all_conversions_value": 0,
+                    }
+                conversion_data[action_name]["conversions"] += row.metrics.conversions
+                conversion_data[action_name]["conversion_value"] += row.metrics.conversions_value
+                conversion_data[action_name]["all_conversions"] += row.metrics.all_conversions
+                conversion_data[action_name]["all_conversions_value"] += row.metrics.all_conversions_value
+
+        except GoogleAdsException as e:
+            print(f"Google Ads API error: {e}")
+            raise
+
+        # Sort by conversions descending
+        results = sorted(conversion_data.values(), key=lambda x: x["conversions"], reverse=True)
+        return results
+
     def get_converting_search_terms(self, days: int = 30, min_conversions: float = 1) -> list[dict[str, Any]]:
         """Get search terms with conversions that aren't yet keywords.
 

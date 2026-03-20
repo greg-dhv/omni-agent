@@ -37,6 +37,11 @@ interface ReportData {
     cost: number;
     conversions: number;
   }>;
+  conversion_actions: Array<{
+    conversion_action: string;
+    conversions: number;
+    conversion_value: number;
+  }>;
 }
 
 type PeriodType = 'last_month' | 'this_month' | 'last_30_days';
@@ -210,6 +215,51 @@ export function ReportsClient() {
               </div>
             </Card>
           </div>
+
+          {/* Conversion Actions */}
+          {report.conversion_actions && report.conversion_actions.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                  Conversions by Type
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {report.conversion_actions
+                    .filter(c => c.conversions > 0)
+                    .slice(0, 8)
+                    .map((conv) => {
+                      const totalConv = report.conversion_actions.reduce((sum, c) => sum + c.conversions, 0);
+                      const share = totalConv > 0 ? (conv.conversions / totalConv) * 100 : 0;
+                      const getEmoji = (name: string) => {
+                        if (name.toUpperCase().includes('FTD') || name.toUpperCase().includes('DEPOSIT')) return '💰';
+                        if (name.toUpperCase().includes('SIGNUP') || name.toUpperCase().includes('REGISTER')) return '📝';
+                        if (name.toUpperCase().includes('PURCHASE') || name.toUpperCase().includes('BUY')) return '🛒';
+                        if (name.toUpperCase().includes('LEAD')) return '📧';
+                        return '🎯';
+                      };
+                      return (
+                        <div key={conv.conversion_action} className="p-4 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xl">{getEmoji(conv.conversion_action)}</span>
+                            <span className="font-medium text-gray-900 truncate text-sm" title={conv.conversion_action}>
+                              {conv.conversion_action.replace('FGO / GA4 (web) ', '').replace('FGO/', '')}
+                            </span>
+                          </div>
+                          <div className="text-2xl font-bold text-green-600">{conv.conversions.toFixed(0)}</div>
+                          <div className="flex justify-between text-sm text-gray-500 mt-1">
+                            <span>{formatCurrency(conv.conversion_value)}</span>
+                            <span>{share.toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Device Performance */}
