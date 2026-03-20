@@ -224,7 +224,7 @@ def create_content_email_html(content: dict, client_name: str, recommendation_de
                         <strong>Mot-clé cible:</strong> {keyword_fr}<br>
                         <strong>Méta description:</strong> {content.get('meta_description_fr', 'N/A')}
                     </div>
-                    <h2>{content.get('title_fr', 'Titre de l\'article')}</h2>
+                    <h2>{content.get('title_fr', "Titre de l'article")}</h2>
                     <div class="article-content">{content.get('content_fr', 'Contenu non disponible.')}</div>
                     <div class="copy-hint">💡 Copiez tout depuis le titre ci-dessus pour créer votre article de blog</div>
                 </div>
