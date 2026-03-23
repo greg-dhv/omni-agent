@@ -134,7 +134,7 @@ export function ContentList({ initialContent }: ContentListProps) {
         size="xl"
       >
         {previewContent && (
-          <div>
+          <div className="max-h-[75vh] overflow-y-auto">
             {/* Why We Wrote This Section */}
             {previewContent.recommendation_details && (
               <div className="mb-4 rounded-lg bg-indigo-50 border border-indigo-200 p-4">
